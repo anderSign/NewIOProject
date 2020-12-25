@@ -16,5 +16,6 @@ public class Client0 {
         int port=8090;
         MainSocketClient client=new MainSocketClient("localhost",port);
         client.starter();
+        System.out.println("结束了");
     }
 }
