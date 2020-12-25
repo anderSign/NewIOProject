@@ -11,6 +11,7 @@ import java.net.Socket;
  */
 public class WebApp {
     public static void main(String[] args) throws ClassNotFoundException {
+        System.out.println("修改后");
         WebAppHandler.openSocketServerInstance(5);
     }
 }
