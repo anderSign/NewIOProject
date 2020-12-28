@@ -68,9 +68,16 @@ public class MainSocketClient extends Socket{
         /*
         尝试使用最简单的单一线程来处理读写问题
          */
-        CurrentThreads thread=new CurrentThreads(this,0);
+        CurrentThreads thread=new CurrentThreads(this);
         thread.start();
     }
+
+    /**
+     * 在这个地方真正链接的
+     * @param host
+     * @param port
+     * @throws IOException
+     */
     public MainSocketClient(String host , Integer port) throws IOException {
         super(host,port);
         this.host=host;

@@ -7,45 +7,68 @@ import java.util.Scanner;
 
 public class Server {
 
-    public static void main(String[] args) throws Exception {
-        ServerSocket server = new ServerSocket(8888);
-        System.out.println("服务器已经启动:");
-        Socket socket= server.accept();
-        System.out.println("链接成功"+"\n"+socket.getRemoteSocketAddress());
-        // 接受数据获取输入流
-        InputStream in;
-        OutputStream out;
-        boolean index=true;
-        Scanner input = new Scanner(System.in);
-        StringBuilder s = new StringBuilder();
-        String speak;
-        while (index) {
-// 读取数据
-            in=socket.getInputStream();
-            out=socket.getOutputStream();
-            byte[] data = new byte[1024];
-            int len;
-            while ((len = in.read(data)) != -1) {
-                s.append(new String(data, 0, len));
-                System.out.println("正在检索...");
-                break;
+    public static final int SERVER_PORK = 8080;
+
+    public static void main(String[] args) throws IOException, InterruptedException {
+        ServerSocket serverSocket = new ServerSocket(SERVER_PORK);
+        System.out.println("正在监听 " + SERVER_PORK + " 端口！");
+        Socket socket;
+        BufferedReader bufferedReader;
+        while (true) {
+            socket = serverSocket.accept();
+            System.out.println("一客户端连接。");
+            Thread writerThread = new Thread(new MyServerWriter(socket));
+            writerThread.start();
+
+            bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            try {
+                String msg;//客户端发过来的信息
+                while ((msg = bufferedReader.readLine()) != null) {
+                    System.out.println("##客户端：" + msg);
+                }
+            } catch (IOException e) {
+                try {
+                    if (!socket.isClosed()) {
+                        socket.close();
+                    }
+                } catch (IOException e1) {
+                    System.out.println("关闭socket出现错误");
+                }
             }
-            System.out.println("客户端发来的数据:" + s);
-// 写入数据
-// System.out.println(" 请输入消息 ");
-            System.out.println("请输入对话:");
-            out.write(input.nextLine().getBytes());
-            in.close();
-            out.close();
-            System.out.println("输入结束请接收");
-            socket.shutdownOutput();
-            System.out.println("是否离开:(输入除了 yes 之外的是不离开)");
-            String s1=input.nextLine();
-            index=!s1.equals("yes");
+            System.out.println("提示：当前客户端已经断开连接，服务器正等待下一个客户端的连接。");
         }
-        System.out.println("信息接收结束");
-        socket.close();
-        System.out.println("main 执行完成!");//netstat -an 查询
+    }
+}
+
+class MyServerWriter implements Runnable {
+    private Socket socket = null;
+    private PrintWriter printWriter;
+    private Scanner scanner;
+
+    public MyServerWriter(Socket socket) throws IOException {
+        this.socket = socket;
+        scanner = new Scanner(System.in);
+        printWriter = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
     }
 
+    @Override
+    public void run() {
+        String msg;//要发送的信息
+        try {
+            while ((msg = scanner.nextLine()) != null) {
+                if (msg.equals("88")) {
+                    if (!socket.isClosed()) {
+                        System.out.println("服务器手动与客户端断开");
+                        socket.close();
+                    }
+                    break;
+                }
+                printWriter.println(msg);
+            }
+        } catch (IOException io) {
+            System.out.println("关闭socket出现问题");
+        } catch (Exception e) {
+            System.out.println("异常关闭客户端（可能是直接关闭退出窗口）");
+        }
+    }
 }

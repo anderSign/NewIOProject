@@ -5,47 +5,65 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.io.*;
+import java.util.Date;
 import java.util.Scanner;
 
 public class Client {
+    public static void main(String[] args) throws IOException {
+        Socket socket = new Socket("localhost", 8080);
+        System.out.println("连接服务器成功！如果想断开连接请输入88（回车）");
+//        new Thread(new MyClientWriter(socket)).start();
 
-    public static void main(String[] args) throws Exception {
-        InetAddress Address=InetAddress.getLocalHost();
-        System.out.println(Address);
-        Address=InetAddress.getByName("www.HerbSchildt.com");
-        System.out.println(Address);
-        InetAddress[] Sw=InetAddress.getAllByName("www.nba.com");
-        Socket client=new Socket("localHost",8888);
-        System.out.println("链接本机");
-        OutputStream out;
-        InputStream in;
-        Scanner input=new Scanner(System.in);
-        boolean index=true;
-        while (index) {
-            out=client.getOutputStream();
-            in=client.getInputStream();
-            out.write(input.nextLine().getBytes());
-            System.out.println("上传结束,等待接收...");
-            Object obj=new Object();
-// try {
-// obj.wait();
-// } catch (InterruptedException e) {
-// System.out.println(" 线程异常 ");
-// }
-            byte[] data = new byte[1024];
-            int len;
-            while ((len = in.read(data)) != -1) {
-                System.out.println(new String(data, 0, len));
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        try {
+            String msg;//服务器发过来的信息
+            while ((msg = bufferedReader.readLine()) != null) {
+                System.out.println("##服务器：" + msg);
             }
-            out.close();
-            in.close();
-            System.out.println("是否离开");
-            index= !input.nextLine().equals("yes");
+        } catch (IOException e) {
+            System.out.println("警告：断开连接！");
+            try {
+                if (!socket.isClosed()) {
+                    socket.close();
+                }
+            } catch (IOException e1) {
+                System.out.println("读取线程：关闭socket出现错误");
+            }
         }
-// 写入到流中发送到服务端
-        client.shutdownOutput();
-        System.out.println("关闭接口");
+        System.exit(1);
+    }
+}
+
+class MyClientWriter implements Runnable{
+    private Socket socket = null;
+    private PrintWriter printWriter;
+    private Scanner scanner;
+
+    public MyClientWriter(Socket socket) throws IOException {
+        this.socket = socket;
+        scanner = new Scanner(System.in);
+        printWriter = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
     }
 
+    @Override
+    public void run() {
+        String msg;//要发送的信息
+        try {
+            while ((msg = scanner.nextLine()) != null) {
+                System.out.println("isClosed="+socket.isClosed());
+                if(socket.isClosed()) {
+                    break;
+                } else {
+                    if(msg.equals("88")) {
+                        break;
+                    }
+                }
+                printWriter.println(msg);
+            }
+        } catch (Exception e) {
+//            System.out.println("异常关闭客户端（可能是直接关闭退出窗口）");
+        }
+        System.out.println("写线程准备死亡");
+    }
 }
 

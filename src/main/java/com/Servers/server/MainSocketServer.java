@@ -32,13 +32,10 @@ public class MainSocketServer implements Runnable,SocketServer{
     private int maxThread=baseConfiguration.getMaxThread();
     //初始端口号
     private int BaseHost=baseConfiguration.getBaseHost();
-    //输入输出流
-    private InputStream in;
-    private OutputStream out;
     //服务器端对象
     private List<Socket> servers;
     //当前对象需要执行的线程
-    private List<Thread> threads;
+    private List<ServerExecute> threads;
 
     public MainSocketServer() throws ClassNotFoundException {
         threads=new ArrayList<>();
@@ -104,14 +101,8 @@ public class MainSocketServer implements Runnable,SocketServer{
         destroy();
     }
 
-    private void destroy() {
-        closeIO();
-    }
 
     private void isMain() {
-        Scanner input = new Scanner(System.in);
-        StringBuilder s = new StringBuilder();
-        String var1;
         int i=1;
         //解决阻塞问题的办法
         try {
@@ -121,36 +112,9 @@ public class MainSocketServer implements Runnable,SocketServer{
                 //过滤非法参数和重复参数
                 if (var2!=null&&!servers.contains(var2)) {
                     servers.add(var2);
-                    System.out.println("服务器:" + serverName + "被连接!->端口号:"+var2.getPort());
-                    Thread thread=new Thread(() -> {
-                        while (true)
-                        try {
-                            for (Socket server : servers) {
-                                in = server.getInputStream();
-                                if (in != null) {
-                                    //获取数据
-                                    byte[] data = new byte[65536];
-                                    int len;
-                                    //重新返回read方法时直接阻塞
-                                    while ((len = in.read(data)) >= 0) {
-                                        s.append(new String(data, 0, len));
-                                        //暴力跳出循环
-                                        break;
-                                    }
-                                    System.out.println("服务器" + serverName + "接收并发送:" + s);
-                                    //群发
-                                    for (Socket outServer : servers) {
-                                        out = outServer.getOutputStream();
-                                        out.write(data);
-                                    }
-                                    //关闭掉流
-                                }
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    );
+                    int client=var2.getPort();
+                    System.out.println("服务器:" + serverName + "被连接!->端口号:"+client);
+                    ServerExecute thread=new ServerExecute(var2,servers,serverName,client);
                     //添加并启动线程
                     thread.setName("CoreThread-"+(i++));
                     threads.add(thread);
@@ -191,18 +155,13 @@ public class MainSocketServer implements Runnable,SocketServer{
 //        System.out.println("当前深度:"+this.deep);
     }
 
-    public void closeIO(){
-        try {
-            if (in!=null)in.close();
-            if (out!=null)out.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
     @Override
     public void init() throws InvalidObjectException {
         //初始化服务器端存储对象
         servers=new ArrayList<>();
         getServerSocketInstance();
+    }
+    private void destroy() {
+        System.exit(1);
     }
 }
