@@ -145,7 +145,7 @@ public class MainSocketServer implements Runnable,SocketServer{
             this.socket=new ServerSocket(InitHost);
             this.deep=deep;
         } catch (IOException e) {
-            if (deep<=maxThread) {
+            if (deep<maxThread) {
                 getServerSocketInstance(deep+1);
 //                System.out.println("一个实例已被创建！！！将要选择下一个端口号\n的进行创建深度：" + this.deep + "\n");
             }else {
