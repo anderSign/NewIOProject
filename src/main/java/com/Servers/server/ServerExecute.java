@@ -7,15 +7,15 @@ import java.util.List;
 public class ServerExecute extends Thread{
     //服务器端对象
     private volatile List<Socket> servers;
-    private Socket socket;
-    private StringBuilder s = new StringBuilder();
+    private final Socket socket;
+    private final StringBuilder s = new StringBuilder();
     //输入输出流
     private InputStream in;
     private OutputStream out;
     //服务器名
-    private String serverName;
+    private final String serverName;
     //客户端口号
-    private int clientPort;
+    private final int clientPort;
     public List<Socket> getServers() {
         return servers;
     }
@@ -41,24 +41,36 @@ public class ServerExecute extends Thread{
                 in = socket.getInputStream();
                 if (in != null) {
                     //获取数据
-                    byte[] data = new byte[1024];
+                    byte[] data = new byte[65536];
                     int len;
                     //重新返回read方法时直接阻塞,所以只要不是文件调用一次即可,否则永远读不到-1
 //                    while ((len = in.read(data)) != -1) {
 //                        s.append("\n").append(new String(data, 0, len)).append("\n");
 //                    }
                     len =in.read(data);
-                    s.append(new String(data, 0, len));
+                    if (len!=-1) {
+                        s.append(new String(data, 0, len));
+                    }
                     System.out.println("服务器" + serverName + "接收到客户端="+clientPort+"的信息:" + s);
                     //群发
                     for (Socket outServer : servers) {
-                        out = outServer.getOutputStream();
-                        out.write(data);
+                        //判断是不是被链接如果不是直接通过
+                        if (!outServer.isClosed()) {
+                            out = outServer.getOutputStream();
+                            out.write(data);
+                        }else {
+                            //如果不存在自己销毁自己
+                            outServer.shutdownInput();
+                            outServer.shutdownOutput();
+                            outServer.close();
+                            servers.remove(outServer);
+                        }
                     }
                     //关闭掉流
                 }
             }
         } catch (IOException e) {
+            System.out.println("有用户离开/退出客户端:"+serverName+"端口号:"+clientPort+']');
             e.printStackTrace();
         }
     }

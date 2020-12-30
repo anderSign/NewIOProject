@@ -35,7 +35,7 @@ public class MainSocketServer implements Runnable,SocketServer{
     //服务器端对象
     private List<Socket> servers;
     //当前对象需要执行的线程
-    private List<ServerExecute> threads;
+    private final List<ServerExecute> threads;
 
     public MainSocketServer() throws ClassNotFoundException {
         threads=new ArrayList<>();

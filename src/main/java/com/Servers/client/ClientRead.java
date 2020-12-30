@@ -30,10 +30,11 @@ public class ClientRead implements Runnable{
             try {
                 len = in.read(data);
             } catch (IOException e) {
+                System.err.println("java.com.Server.client.ClientRead.run()=>客户端可能离开或者网络链接异常!");
                 e.printStackTrace();
+                System.exit(0);
             }
-            System.out.println(new String(data, 0, len));
-
+            if (len!=-1) System.out.println(new String(data, 0, len));
         }
     }
 }
